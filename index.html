@@ -266,7 +266,7 @@
    Expected columns, in this order:
    Education Level | Interest Area | Study Option | Job Option | Business Option | Training Option | Notes
 --------------------------------------------------------------------- */
-const SHEET_CSV_URL = "PASTE_YOUR_PUBLISHED_CSV_LINK_HERE";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_11D-j9SiBDVrQ7w30d9nphp0rPjXm7Rp2SnWRYCmxQLiG7g6YfsIZPNFTCC4Kt1YEQlrahn_ctFi/pub?output=csv";
 
 const FALLBACK_CSV = `Education Level,Interest Area,Study Option,Job Option,Business Option,Training Option,Notes
 10th / 12th pass,Technology / Computers,"Diploma in Computer Science/IT or ITI COPA (1 year)","Data entry operator, hardware assistant","PC and mobile repair shop","PMKVY IT-ITES track (free, with stipend)","Apply via skillindiadigital.gov.in"
@@ -329,31 +329,44 @@ function initForm(){
 
 function loadData(){
   const status = document.getElementById("status");
-  const finish = (rows, fromFallback) => {
+  const finish = (rows, statusMessage) => {
     DATA = normalize(rows);
     if (DATA.length === 0){
-      status.textContent = "Couldn't read any rows — check the sheet is published as CSV and columns match.";
+      status.textContent = "Sheet reached, but no usable rows found — check your column headers match exactly.";
+      console.error("Parsed 0 usable rows from:", rows);
       return;
     }
     initForm();
-    status.textContent = fromFallback
-      ? "Using sample data — paste your sheet's CSV link into SHEET_CSV_URL to go live."
-      : "";
+    status.textContent = statusMessage || "";
   };
 
   if (!SHEET_CSV_URL || SHEET_CSV_URL.indexOf("PASTE_YOUR") === 0){
-    Papa.parse(FALLBACK_CSV, { header: true, skipEmptyLines: true, complete: (res) => finish(res.data, true) });
+    Papa.parse(FALLBACK_CSV, {
+      header: true, skipEmptyLines: true,
+      complete: (res) => finish(res.data, "Using sample data — paste your sheet's CSV link into SHEET_CSV_URL to go live.")
+    });
     return;
   }
 
+  status.textContent = "Fetching your sheet…";
   Papa.parse(SHEET_CSV_URL, {
     download: true,
     header: true,
     skipEmptyLines: true,
-    complete: (res) => finish(res.data, false),
-    error: () => {
-      status.textContent = "Couldn't reach the sheet — showing sample data instead.";
-      Papa.parse(FALLBACK_CSV, { header: true, skipEmptyLines: true, complete: (res) => finish(res.data, true) });
+    complete: (res) => {
+      if (res.errors && res.errors.length){
+        console.error("CSV parse errors:", res.errors);
+      }
+      console.log("Rows read from your sheet:", res.data.length, res.data);
+      finish(res.data, res.data.length ? "" : "Sheet reached, but it looks empty — check the published tab.");
+    },
+    error: (err) => {
+      console.error("Failed to fetch SHEET_CSV_URL:", err);
+      status.textContent = "Couldn't reach the sheet (see browser console for the exact error) — showing sample data instead.";
+      Papa.parse(FALLBACK_CSV, {
+        header: true, skipEmptyLines: true,
+        complete: (res) => { DATA = normalize(res.data); initForm(); }
+      });
     }
   });
 }

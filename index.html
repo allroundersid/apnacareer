@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Way — find your career direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --paper:#EFEAE1;
+    --ink:#1B2430;
+    --ink-soft:#4A5364;
+    --line:#D8D0BF;
+    --gold:#B9812E;
+    --gold-deep:#7A551D;
+    --teal:#2F6F62;
+    --teal-deep:#1D453C;
+    --rust:#A24B36;
+    --rust-deep:#6B2F21;
+    --plum:#5B4B7A;
+    --plum-deep:#38304F;
+    --card:#F7F4EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:56px 24px 96px;}
+  .eyebrow{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold-deep);
+    font-weight:600;
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:'Newsreader',serif;
+    font-weight:500;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.08;
+    margin:0 0 18px;
+    letter-spacing:-0.01em;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--rust-deep);}
+  .lede{
+    font-size:17px;
+    color:var(--ink-soft);
+    max-width:560px;
+    margin:0 0 44px;
+  }
+  .compass{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .compass svg{width:34px;height:34px;flex-shrink:0;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:36px;
+  }
+  .step-label{
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin:0 0 8px;
+  }
+  fieldset{border:none;padding:0;margin:0 0 28px;}
+  legend{
+    font-family:'Newsreader',serif;
+    font-size:19px;
+    margin:0 0 12px;
+    padding:0;
+  }
+  .options{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;
+  }
+  .opt{
+    position:relative;
+  }
+  .opt input{
+    position:absolute;
+    opacity:0;
+    width:100%;height:100%;
+    margin:0;
+    cursor:pointer;
+  }
+  .opt label{
+    display:block;
+    padding:13px 16px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .opt input:checked + label{
+    border-color:var(--gold-deep);
+    background:#fff;
+    box-shadow:inset 0 0 0 1px var(--gold-deep);
+    color:var(--gold-deep);
+    font-weight:500;
+  }
+  .opt input:focus-visible + label{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+
+  button.go{
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    color:#fff;
+    background:var(--ink);
+    border:none;
+    padding:14px 30px;
+    cursor:pointer;
+    letter-spacing:0.01em;
+  }
+  button.go:hover{background:var(--teal-deep);}
+  button.go:disabled{opacity:0.5;cursor:not-allowed;}
+  .status{font-size:13px;color:var(--ink-soft);margin-top:10px;min-height:18px;}
+
+  #results{margin-top:52px;display:none;}
+  .results-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:16px;
+  }
+  .results-head h2{
+    font-family:'Newsreader',serif;
+    font-weight:500;
+    font-size:26px;
+    margin:0;
+  }
+  .results-head .tag{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .paths{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .path{
+    background:var(--card);
+    padding:24px;
+  }
+  .path .kicker{
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  .path.study .kicker{color:var(--plum-deep);}
+  .path.job .kicker{color:var(--teal-deep);}
+  .path.business .kicker{color:var(--rust-deep);}
+  .path.training .kicker{color:var(--gold-deep);}
+  .path p.body{font-size:14.5px;color:var(--ink);margin:0;}
+  .note{
+    margin-top:20px;
+    font-size:14px;
+    color:var(--ink-soft);
+    font-style:italic;
+    font-family:'Newsreader',serif;
+  }
+  .empty{
+    display:none;
+    margin-top:20px;
+    font-size:14px;
+    color:var(--rust-deep);
+  }
+  footer{
+    margin-top:70px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="compass">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="#1B2430" stroke-width="1.3"/>
+      <path d="M20 8 L23 19 L20 22 L17 19 Z" fill="#A24B36"/>
+      <path d="M20 32 L17 21 L20 18 L23 21 Z" fill="#1B2430"/>
+      <circle cx="20" cy="20" r="1.6" fill="#1B2430"/>
+    </svg>
+    <span class="eyebrow" style="margin:0;">Which way</span>
+  </div>
+
+  <h1>Three questions. <em>Four ways forward.</em></h1>
+  <p class="lede">Answer honestly — this looks at your education level, what interests you, and what you need right now, then lays out a real study, job, business, and training route for someone in your position.</p>
+
+  <div class="card">
+    <form id="quiz">
+      <fieldset>
+        <legend>Where are you starting from?</legend>
+        <div class="options" id="opt-edu"></div>
+      </fieldset>
+      <fieldset>
+        <legend>What pulls you in?</legend>
+        <div class="options" id="opt-interest"></div>
+      </fieldset>
+      <fieldset>
+        <legend>What matters most right now?</legend>
+        <div class="options" id="opt-priority"></div>
+      </fieldset>
+      <button type="submit" class="go" id="go-btn" disabled>Loading your data…</button>
+      <div class="status" id="status">Connecting to the career data sheet…</div>
+    </form>
+  </div>
+
+  <div class="empty" id="empty-msg">No route found for that exact combination yet — try a different interest area, or add a matching row to the sheet.</div>
+
+  <div id="results">
+    <div class="results-head">
+      <h2>Your directions</h2>
+      <span class="tag" id="results-tag"></span>
+    </div>
+    <div class="paths">
+      <div class="path study"><p class="kicker">Study</p><p class="body" id="out-study"></p></div>
+      <div class="path job"><p class="kicker">Job</p><p class="body" id="out-job"></p></div>
+      <div class="path business"><p class="kicker">Business</p><p class="body" id="out-business"></p></div>
+      <div class="path training"><p class="kicker">Training</p><p class="body" id="out-training"></p></div>
+    </div>
+    <p class="note" id="out-notes"></p>
+  </div>
+
+  <footer>
+    Data pulled live from a Google Sheet. To update career paths, edit the sheet directly — changes show up next time someone loads this page.
+  </footer>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------------------
+   SETUP: paste your published Google Sheet CSV link below.
+   File > Share > Publish to web > select the "Career Paths" tab > CSV > Publish.
+   Copy the link it gives you and paste it as SHEET_CSV_URL.
+   Expected columns, in this order:
+   Education Level | Interest Area | Study Option | Job Option | Business Option | Training Option | Notes
+--------------------------------------------------------------------- */
+const SHEET_CSV_URL = "PASTE_YOUR_PUBLISHED_CSV_LINK_HERE";
+
+const FALLBACK_CSV = `Education Level,Interest Area,Study Option,Job Option,Business Option,Training Option,Notes
+10th / 12th pass,Technology / Computers,"Diploma in Computer Science/IT or ITI COPA (1 year)","Data entry operator, hardware assistant","PC and mobile repair shop","PMKVY IT-ITES track (free, with stipend)","Apply via skillindiadigital.gov.in"
+10th / 12th pass,Business / Commerce,"12th Commerce then B.Com, or a retail diploma","Retail sales associate, billing assistant","Small trading/reselling on WhatsApp","Tally Foundation course","Tally is widely asked for in small-business jobs"
+10th / 12th pass,Design / Creative,"Diploma in Fine Arts or Animation","Junior design assistant, print shop designer","Freelance posters/logos for local shops","Canva and free Photoshop tutorials","Portfolio matters more than the certificate"
+10th / 12th pass,Healthcare,"ANM or GNM nursing diploma","Nursing assistant, ward attendant","Home elder-care service","PMKVY Healthcare sector courses","Includes practical hospital exposure"
+10th / 12th pass,Skilled Trade / Hands-on,"ITI diploma: Electrician, Plumber, Welder","Electrician, plumber, mechanic","Independent contracting once certified","PMKVY trade courses (free + stipend)","Widely accepted by employers across India"
+Undergraduate student,Technology / Computers,"B.Tech/B.Sc CS in progress","Junior developer intern, QA intern","Freelance websites for local businesses","AICTE ELIS internships, freeCodeCamp","AICTE ELIS partners with Microsoft, AWS, Google"
+Undergraduate student,Business / Commerce,"B.Com/BBA in progress","Sales or accounts intern","Campus reselling or tutoring business","Tally + GST certification","Internships matter more than grades alone"
+Undergraduate student,Design / Creative,"B.Des/BFA in progress","Design intern at an agency","Freelance on Fiverr/Behance","Google UX Design free course","Employers hire on portfolio, not just degree"
+Undergraduate student,Healthcare,"B.Sc Nursing/BPT in progress","Hospital clinical intern","Not typical at this stage","First-aid and BLS certification","Clinical hours logged now affect readiness later"
+Undergraduate student,Skilled Trade / Hands-on,"B.Tech Mechanical/Civil in progress","Site engineer trainee","Not typical at this stage","NSDC apprenticeship programs","Apprenticeships build direct industry contacts"
+Graduate,Technology / Computers,"Not needed unless specializing further","Junior software developer, QA engineer","Small digital services agency","Google IT Support Certificate, AICTE ELIS","A 3-6 month bootcamp plus real projects matters most"
+Graduate,Business / Commerce,"MBA only if aiming for management later","Sales executive, business development associate","Small trading or e-commerce reselling","Tally + GST, HubSpot free certifications","PM Internship Scheme: paid 12-month, Rs 5,000/month"
+Graduate,Design / Creative,"Not needed unless specializing further","Graphic or UI/UX designer at an agency","Freelance studio with multiple clients","Google UX Design Certificate","A strong portfolio site is the highest-leverage asset"
+Graduate,Healthcare,"Registration/licensing is the key step","Staff nurse, physiotherapist, lab technician","Home-care or diagnostics center (licensed)","State nursing council registration","Track govt hospital PSC recruitment for stable roles"
+Graduate,Skilled Trade / Hands-on,"Not needed - certification matters more","Site supervisor, maintenance engineer","Independent contracting once experienced","NSDC/PMKVY advanced trade certifications","Manufacturers often run free technician programs"
+Already working,Technology / Computers,"Part-time diploma only if switching field","Lateral move to a tech-adjacent role","Side-freelance for other small businesses","Short paid courses in cloud/data when budget allows","A lateral move inside your company is often faster"
+Already working,Business / Commerce,"Executive MBA only for leadership track","Move toward team lead/BD role","Start a side business before quitting","Free LinkedIn Learning, Tally advanced modules","Testing an idea part-time reduces financial risk"
+Already working,Design / Creative,"Not needed - portfolio outweighs study","Move to senior design or agency role","Weekend freelance client base","Motion graphics, Blender (free)","Blender is increasingly in demand"
+Already working,Healthcare,"Specialty certification, not a new degree","Move to specialty department/supervisory role","Home healthcare or diagnostics business","Specialty certifications via professional bodies","Specialization is the fastest path to higher pay"
+Already working,Skilled Trade / Hands-on,"Not needed - advanced certification matters more","Move to supervisory/contractor-relations role","Start independent contracting","Manufacturer and safety/compliance certifications","Safety certifications unlock larger, better-paid contracts"`;
+
+let DATA = [];
+
+function normalize(rows){
+  return rows.filter(r => r["Education Level"] && r["Interest Area"]).map(r => ({
+    edu: r["Education Level"].trim(),
+    interest: r["Interest Area"].trim(),
+    study: (r["Study Option"] || "").trim(),
+    job: (r["Job Option"] || "").trim(),
+    business: (r["Business Option"] || "").trim(),
+    training: (r["Training Option"] || "").trim(),
+    notes: (r["Notes"] || "").trim(),
+  }));
+}
+
+function buildOptions(containerId, values, name){
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  values.forEach((v, i) => {
+    const id = name + "-" + i;
+    const wrap = document.createElement("div");
+    wrap.className = "opt";
+    wrap.innerHTML = `<input type="radio" name="${name}" id="${id}" value="${v}" ${i===0?"checked":""}>
+                       <label for="${id}">${v}</label>`;
+    el.appendChild(wrap);
+  });
+}
+
+function initForm(){
+  const edus = [...new Set(DATA.map(r => r.edu))];
+  const interests = [...new Set(DATA.map(r => r.interest))];
+  buildOptions("opt-edu", edus, "edu");
+  buildOptions("opt-interest", interests, "interest");
+  buildOptions("opt-priority", ["Earning quickly", "Building deep expertise", "Starting something of my own"], "priority");
+  document.getElementById("go-btn").disabled = false;
+  document.getElementById("go-btn").textContent = "Show my directions";
+}
+
+function loadData(){
+  const status = document.getElementById("status");
+  const finish = (rows, fromFallback) => {
+    DATA = normalize(rows);
+    if (DATA.length === 0){
+      status.textContent = "Couldn't read any rows — check the sheet is published as CSV and columns match.";
+      return;
+    }
+    initForm();
+    status.textContent = fromFallback
+      ? "Using sample data — paste your sheet's CSV link into SHEET_CSV_URL to go live."
+      : "";
+  };
+
+  if (!SHEET_CSV_URL || SHEET_CSV_URL.indexOf("PASTE_YOUR") === 0){
+    Papa.parse(FALLBACK_CSV, { header: true, skipEmptyLines: true, complete: (res) => finish(res.data, true) });
+    return;
+  }
+
+  Papa.parse(SHEET_CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: (res) => finish(res.data, false),
+    error: () => {
+      status.textContent = "Couldn't reach the sheet — showing sample data instead.";
+      Papa.parse(FALLBACK_CSV, { header: true, skipEmptyLines: true, complete: (res) => finish(res.data, true) });
+    }
+  });
+}
+
+document.getElementById("quiz").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const edu = document.querySelector('input[name="edu"]:checked').value;
+  const interest = document.querySelector('input[name="interest"]:checked').value;
+  const priority = document.querySelector('input[name="priority"]:checked').value;
+
+  const match = DATA.find(r => r.edu === edu && r.interest === interest);
+  const results = document.getElementById("results");
+  const empty = document.getElementById("empty-msg");
+
+  if (!match){
+    results.style.display = "none";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  document.getElementById("results-tag").textContent = edu + " · " + interest;
+  document.getElementById("out-study").textContent = match.study;
+  document.getElementById("out-job").textContent = match.job;
+  document.getElementById("out-business").textContent = match.business;
+  document.getElementById("out-training").textContent = match.training;
+
+  let note = match.notes || "";
+  if (priority === "Earning quickly") note = "Priority: quick income — lean on the job path first. " + note;
+  if (priority === "Starting something of my own") note = "Priority: independence — the business path is worth planning toward. " + note;
+  if (priority === "Building deep expertise") note = "Priority: depth — the study path builds the strongest long-term foundation. " + note;
+  document.getElementById("out-notes").textContent = note;
+
+  results.style.display = "block";
+  results.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+loadData();
+</script>
+</body>
+</html>

@@ -377,7 +377,13 @@ document.getElementById("quiz").addEventListener("submit", (e) => {
   const interest = document.querySelector('input[name="interest"]:checked').value;
   const priority = document.querySelector('input[name="priority"]:checked').value;
 
-  const match = DATA.find(r => r.edu === edu && r.interest === interest);
+  const match = DATA.find(r =>
+    r.edu.trim().toLowerCase() === edu.trim().toLowerCase() &&
+    r.interest.trim().toLowerCase() === interest.trim().toLowerCase()
+  );
+  console.log("Looking for:", JSON.stringify(edu), JSON.stringify(interest));
+  console.log("Available rows:", DATA.map(r => r.edu + " | " + r.interest));
+  console.log("Match found:", match);
   const results = document.getElementById("results");
   const empty = document.getElementById("empty-msg");
 
